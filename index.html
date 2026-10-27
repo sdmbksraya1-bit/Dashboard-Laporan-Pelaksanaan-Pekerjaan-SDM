@@ -96,19 +96,20 @@ const rp=n=>{const a=Math.abs(n),s=n<0?'-':'';return a>=1e9?s+'Rp'+(a/1e9).toLoc
 const pct=n=>(n*100).toLocaleString('id-ID',{maximumFractionDigits:1})+'%';
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const rows=(k,sh)=>{const w=S[k];return w&&w.Sheets[sh]?XLSX.utils.sheet_to_json(w.Sheets[sh],{header:1,defval:null}):[]};
+const rr=ws=>ws&&ws['!ref']?XLSX.utils.sheet_to_json(ws,{header:1,defval:null,range:{s:{r:0,c:0},e:XLSX.utils.decode_range(ws['!ref']).e}}):[];
+const rows=(k,sh)=>{const w=S[k];return w&&w.Sheets[sh]?rr(w.Sheets[sh]):[]};
 const objs=(k,sh)=>{const w=S[k];return w&&w.Sheets[sh]?XLSX.utils.sheet_to_json(w.Sheets[sh],{defval:null}):[]};
 
 function detectWb(wb){const n=wb.SheetNames,has=x=>n.includes(x);
   if(has('Kehadiran 2026'))return'jab';if(has('RKAP Lbr'))return'eval';if(has('Pesangon'))return'pes';
   if(has('PKWTT')&&has('PKWT'))return'dplk';if(has('Rekap')&&has('1'))return'lbr';
   if(has('Jun')&&has('Okt')&&has('Sep'))return'tlbr';
-  const flat=XLSX.utils.sheet_to_json(wb.Sheets[n[0]],{header:1,defval:null}).slice(0,6).flat().map(x=>String(x||'').toUpperCase()).join('|');
+  const flat=rr(wb.Sheets[n[0]]).slice(0,6).flat().map(x=>String(x||'').toUpperCase()).join('|');
   if(flat.includes('TEGURAN')&&flat.includes('SP1'))return'sanksi';
   if(flat.includes('BULAN')&&flat.includes('ALPA')&&flat.includes('SAKIT'))return'hadir';
   if(flat.includes('EMP_ID')&&flat.includes('EMP_STATUS'))return'tk';
   if(flat.includes('KEBUTUHAN'))return'ful';
-  const s2=wb.Sheets['Sheet2'];if(s2){const a=XLSX.utils.sheet_to_json(s2,{header:1,defval:null})[0];if(a&&String(a[0]||'').toUpperCase().includes('ABSENSI'))return'abs'}
+  const s2=wb.Sheets['Sheet2'];if(s2){const a=rr(s2)[0];if(a&&String(a[0]||'').toUpperCase().includes('ABSENSI'))return'abs'}
   return null}
 async function load(files){const bad=[];
   for(const f of files){let wb;try{wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true})}catch(e){bad.push(f.name+' (gagal dibaca)');continue}
