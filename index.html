@@ -88,6 +88,7 @@ const BLN=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','De
 const NM=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 const MON={jan:1,feb:2,mar:3,apr:4,mei:5,may:5,jun:6,jul:7,ags:8,agu:8,agt:8,aug:8,sep:9,okt:10,oct:10,nov:11,des:12,dec:12};
 const monOf=v=>MON[String(v||'').trim().slice(0,3).toLowerCase()]||0;
+const dm=d=>{const x=new Date(d.getTime()+43200000);return[x.getFullYear(),x.getMonth()+1]};
 const S={};let charts={};
 const $=id=>document.getElementById(id);
 const num=v=>typeof v==='number'?v:(parseFloat(v)||0);
@@ -131,9 +132,9 @@ function render(){
   const bln=NM[per-1],has=tk.length>0,total=tk.length;
   const pkwtt=tk.filter(r=>r.EMP_STATUS==='PKWTT').length,pkwt=tk.filter(r=>r.EMP_STATUS==='PKWT').length;
   const lk=tk.filter(r=>String(r.GENDER).toUpperCase()==='PRIA').length;
-  const masuk=tk.filter(r=>r.START_DATE instanceof Date&&r.START_DATE.getFullYear()===thn&&r.START_DATE.getMonth()+1===per).length;
-  const pes=S.pes?objs('pes','Pesangon').filter(r=>r['TGL KELUAR'] instanceof Date&&r['TGL KELUAR'].getFullYear()===thn):[];
-  const keluar=S.pes?pes.filter(r=>r['TGL KELUAR'].getMonth()+1===per).length:null;
+  const masuk=tk.filter(r=>r.START_DATE instanceof Date&&dm(r.START_DATE)[0]===thn&&dm(r.START_DATE)[1]===per).length;
+  const pes=S.pes?objs('pes','Pesangon').filter(r=>r['TGL KELUAR'] instanceof Date&&dm(r['TGL KELUAR'])[0]===thn):[];
+  const keluar=S.pes?pes.filter(r=>dm(r['TGL KELUAR'])[1]===per).length:null;
   let F=null;if(S.ful){const r=rows('ful',S.ful.SheetNames[0]).find(x=>x[2]==='TOTAL');if(r)F={keb:num(r[4]),pkwt:num(r[5]),pkwtt:num(r[6]),os:num(r[7]),tf:num(r[8]),tot:num(r[10]),dev:num(r[11])}}
 
   // lembur
@@ -142,7 +143,7 @@ function render(){
     top.k=[...cur].sort((a,b)=>num(b.OT)-num(a.OT)).slice(0,10).map(r=>[r.EMP_NAME,r.AREA_NAME,num(r.OT)]);
     const u={};cur.forEach(r=>u[r.AREA_NAME]=(u[r.AREA_NAME]||0)+num(r.OT));top.u=Object.entries(u).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([n,v])=>[n,n,v])}
   const RK=[];if(S.tlbr){const sh=S.tlbr.SheetNames.includes(BLN[per-1])?BLN[per-1]:S.tlbr.SheetNames[S.tlbr.SheetNames.length-1];
-    rows('tlbr',sh).forEach(r=>r.forEach((c,j)=>{const m=monOf(c);if(m&&typeof c==='string'&&typeof r[j+1]==='number')RK[m]=r[j+1]}))}
+    rows('tlbr',sh).forEach(r=>r.forEach((c,j)=>{const m=monOf(c);if(m&&typeof c==='string'&&typeof r[j-1]==='number'&&r[j+1]>1e5)RK[m]=r[j+1]}))}
   const biaya=L.reduce((s,v,m)=>m<=per?s+(v||0):s,0);
   let manual=null;try{manual=parseFloat(localStorage.getItem('sdm_budget'))||null}catch(e){}
   const rkSum=RK.reduce((s,v,m)=>m<=per?s+(v||0):s,0);
@@ -158,7 +159,7 @@ function render(){
   const hm=Object.keys(HD).map(Number).sort((a,b)=>a-b),SK=trend('sanksi',[3,4,5,6,7]),sm=Object.keys(SK).map(Number).sort((a,b)=>a-b);
   // pensiun
   const jab={};if(S.jab)S.jab.SheetNames.filter(n=>/^\d+$/.test(n)).forEach(n=>{const r=rows('jab',n),ji=(r[0]||[]).findIndex(x=>/^jabatan$/i.test(String(x||'').trim()));if(ji>=0)r.slice(1).forEach(x=>{if(x[0]&&x[ji]&&!jab[x[0]])jab[x[0]]=x[ji]})});
-  const pn=pes.filter(r=>/USIA PENSIUN/i.test(r['PENYEBAB PHK']||'')&&r['TGL KELUAR'].getMonth()+1<=per);
+  const pn=pes.filter(r=>/USIA PENSIUN/i.test(r['PENYEBAB PHK']||'')&&dm(r['TGL KELUAR'])[1]<=per);
   const pj={};pn.forEach(r=>{const g=S.jab?jabGrup(jab[r.NIP]):null;if(g)pj[g]=(pj[g]||0)+1});
   // dplk
   const D={};if(S.dplk)['PKWTT','PKWT'].forEach(sh=>{const r=rows('dplk',sh);
