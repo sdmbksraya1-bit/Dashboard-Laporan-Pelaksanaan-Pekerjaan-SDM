@@ -71,21 +71,21 @@ table{border-collapse:collapse;width:100%;font-size:12.5px}td{padding:5px 0;bord
 <div id="out" hidden>
   <div class="grid kpis" id="kpis"></div>
   <div class="grid cols">
-    <section class="card"><h2>Komposisi per kelompok kerja</h2><p class="hint">Jumlah karyawan di tiap kelompok kerja.</p><div class="chartbox"><canvas id="c1"></canvas></div><p class="note" id="unm"></p></section>
-    <section class="card"><h2>Kebutuhan tenaga kerja</h2><p class="hint">Tenaga kerja yang tersedia dibanding yang dibutuhkan.</p><div id="ful"></div></section>
-    <section class="card"><h2>Pergerakan karyawan</h2><p class="hint">Masuk, keluar, dan pensiun.</p><div id="mov"></div></section>
+    <section class="card"><h2>DEMOGRAFI KARYAWAN</h2><p class="hint">Jumlah karyawan di tiap kelompok kerja.</p><div class="chartbox"><canvas id="c1"></canvas></div><p class="note" id="unm"></p></section>
+    <section class="card"><h2>TURNOVER BULAN INI</h2><p class="hint">Tenaga kerja yang tersedia dibanding yang dibutuhkan.</p><div id="ful"></div></section>
+    <section class="card"><h2>PENSIUN BERDASARKAN JABATAN</h2><p class="hint">Masuk, keluar, dan pensiun.</p><div id="mov"></div></section>
   </div>
   <div class="grid cols">
-    <section class="card"><h2>Tren ketidakhadiran</h2><p class="hint">Jumlah hari tidak hadir tiap bulan, dihitung dari rekap absensi. Makin rendah makin baik.</p><div class="chartbox sm"><canvas id="c2"></canvas></div><div id="ins"></div></section>
-    <section class="card"><h2>Sanksi disiplin</h2><p class="hint">Isi jumlah sanksi tiap bulan, grafik muncul otomatis.</p><div class="chartbox sm"><canvas id="c4"></canvas></div><div id="sf"></div></section>
+    <section class="card"><h2>TREN KEHADIRAN</h2><p class="hint">Jumlah hari tidak hadir tiap bulan, dihitung dari rekap absensi. Makin rendah makin baik.</p><div class="chartbox sm"><canvas id="c2"></canvas></div><div id="ins"></div></section>
+    <section class="card"><h2>TREN DISIPLIN</h2><p class="hint">Isi jumlah sanksi tiap bulan, grafik muncul otomatis.</p><div class="chartbox sm"><canvas id="c4"></canvas></div><div id="sf"></div></section>
   </div>
   <div class="grid cols">
-    <section class="card"><h2>Biaya lembur</h2><p class="hint">Biaya nyata dibanding rencana (RKAP) tiap bulan, dalam juta rupiah.</p><div class="chartbox sm"><canvas id="c3"></canvas></div><div class="tiles" id="lem"></div><label class="bud" hidden style="display:none">✍️ Isi budget lembur s.d. bulan ini (Rp)<input type="number" min="0" id="bud" placeholder="contoh: 4994000000"><small id="budf"></small></label></section>
-    <section class="card"><h2>Lembur tertinggi</h2><p class="hint">Bulan ini.</p><b>10 karyawan</b><div id="topk"></div><b style="display:block;margin-top:14px">10 unit kerja</b><div id="topu"></div></section>
+    <section class="card"><h2>PRODUKTIVITAS SDM</h2><p class="hint">Biaya nyata dibanding rencana (RKAP) tiap bulan, dalam juta rupiah.</p><div class="chartbox sm"><canvas id="c3"></canvas></div><div class="tiles" id="lem"></div><label class="bud" hidden style="display:none">✍️ Isi budget lembur s.d. bulan ini (Rp)<input type="number" min="0" id="bud" placeholder="contoh: 4994000000"><small id="budf"></small></label></section>
+    <section class="card"><h2>LEMBUR SDM</h2><p class="hint">Bulan ini.</p><b>10 karyawan</b><div id="topk"></div><b style="display:block;margin-top:14px">10 unit kerja</b><div id="topu"></div></section>
   </div>
   <div class="grid cols">
-    <section class="card"><h2>Imbalan pasca kerja (DPLK)</h2><p class="hint">Dana yang terkumpul dibanding kewajiban yang harus dibayar.</p><div id="dplk"></div></section>
-    <section class="card"><h2>Sorotan bulan ini</h2><p class="hint">Ringkasan otomatis dari data.</p><ul class="hl" id="hl"></ul></section>
+    <section class="card"><h2>IMBALAN PASCA KERJA (DPLK)</h2><p class="hint">Dana yang terkumpul dibanding kewajiban yang harus dibayar.</p><div id="dplk"></div></section>
+    <section class="card"><h2>HIGHLIGHT</h2><p class="hint">Ringkasan otomatis dari data.</p><ul class="hl" id="hl"></ul></section>
   </div>
 </div>
 </main>
