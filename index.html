@@ -232,15 +232,15 @@ function render(){
   const pal=['--c1','--c2','--c3','--c4','--c5','--c6'].map(css),line=css('--line');
   const mk=(id,cfg)=>{const el=$(id);el.parentElement.querySelector('.empty')?.remove();el.style.display='';charts[id]=new Chart(el,cfg)};
   const halo=css('--card'),ink=css('--ink');
-  const lbl=(c,t,x,y,col,al,bl,sz=11)=>{c.save();c.font='700 '+sz+'px '+Chart.defaults.font.family;c.textAlign=al||'center';c.textBaseline=bl||'middle';c.lineJoin='round';c.lineWidth=3;c.strokeStyle=halo;c.strokeText(t,x,y);c.fillStyle=col;c.fillText(t,x,y);c.restore()};
+  const lbl=(c,t,x,y,col,al,bl,sz=11,hl)=>{c.save();c.font='700 '+sz+'px '+Chart.defaults.font.family;c.textAlign=al||'center';c.textBaseline=bl||'middle';c.lineJoin='round';c.lineWidth=3;c.strokeStyle=hl||halo;c.strokeText(t,x,y);c.fillStyle=col;c.fillText(t,x,y);c.restore()};
   const angka={id:'angka',afterDatasetsDraw(ch){const c=ch.ctx,tp=ch.config.type,tot0=tp==='doughnut'?ch.data.datasets[0].data.reduce((a,b)=>a+b,0):0;
     ch.data.datasets.forEach((ds,i)=>{const m=ch.getDatasetMeta(i);if(m.hidden)return;const t=ds.type||tp;
       m.data.forEach((el,j)=>{const v=ds.data[j];if(!v||el.skip)return;
         if(t==='doughnut'){const p=el.getCenterPoint();c.save();c.font='700 11px '+Chart.defaults.font.family;c.textAlign='center';c.textBaseline='middle';c.lineWidth=3;c.lineJoin='round';c.strokeStyle='rgba(0,0,0,.35)';const tx=Math.round(v/tot0*100)+'%';c.strokeText(tx,p.x,p.y);c.fillStyle='#fff';c.fillText(tx,p.x,p.y);c.restore()}
-        else if(t==='line')lbl(c,fmt(v),el.x,el.y+(ds.lblPos==='below'?14:-10),ds.borderColor);
+        else if(t==='line')lbl(c,fmt(v),el.x,el.y+(ds.lblPos==='below'?14:-10),ds.borderColor,null,null,11,halo);
         else if(t==='bar'){const st=ch.options.scales.x&&ch.options.scales.x.stacked;
-          if(st){const p=el.getCenterPoint();lbl(c,fmt(v),p.x,p.y,'#fff',null,null,10)}
-          else lbl(c,fmt(v),el.x,Math.min(el.y,el.base)+10,'#fff')}})});
+          if(st){const p=el.getCenterPoint();lbl(c,fmt(v),p.x,p.y,'#fff',null,null,10,'rgba(0,0,0,.45)')}
+          else lbl(c,fmt(v),el.x,Math.max(el.y,el.base)-10,'#fff',null,null,11,'rgba(0,0,0,.45)')}})});
     if(tp==='doughnut'){const a=ch.getDatasetMeta(0).data[0];if(a){lbl(c,fmt(tot0),a.x,a.y-8,ink,null,null,26);lbl(c,'Orang',a.x,a.y+16,ink,null,null,13)}}}};
   Chart.register(angka);
   const none=id=>{const el=$(id);el.style.display='none';if(!el.parentElement.querySelector('.empty'))el.parentElement.insertAdjacentHTML('beforeend','<p class="empty">Belum ada data untuk ditampilkan.</p>')};
@@ -265,3 +265,4 @@ chips();
 </script>
 </body>
 </html>
+
