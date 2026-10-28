@@ -113,6 +113,8 @@ const num=v=>typeof v==='number'?v:(parseFloat(v)||0);
 const fmt=n=>Math.round(n).toLocaleString('id-ID');
 const rp=n=>{const a=Math.abs(n),s=n<0?'-':'';return a>=1e9?s+'Rp'+(a/1e9).toLocaleString('id-ID',{maximumFractionDigits:2})+' M':a>=1e6?s+'Rp'+(a/1e6).toLocaleString('id-ID',{maximumFractionDigits:1})+' jt':s+'Rp'+fmt(a)};
 const pct=n=>(n*100).toLocaleString('id-ID',{maximumFractionDigits:1})+'%';
+const pct2=n=>(n*100).toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
+const rpM=n=>'Rp'+(Math.abs(n)/1e9).toLocaleString('id-ID',{minimumFractionDigits:3,maximumFractionDigits:3})+' M';
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const rr=ws=>ws&&ws['!ref']?XLSX.utils.sheet_to_json(ws,{header:1,defval:null,range:{s:{r:0,c:0},e:XLSX.utils.decode_range(ws['!ref']).e}}):[];
@@ -153,7 +155,7 @@ function render(){
   const lk=tk.filter(r=>String(r.GENDER).toUpperCase()==='PRIA').length;
   const masuk=tk.filter(r=>r.START_DATE instanceof Date&&dm(r.START_DATE)[0]===thn&&dm(r.START_DATE)[1]===per).length;
   const pes=S.pes?objs('pes','Pesangon').filter(r=>r['TGL KELUAR'] instanceof Date&&dm(r['TGL KELUAR'])[0]===thn):[];
-  const keluar=S.pes?pes.filter(r=>dm(r['TGL KELUAR'])[1]===per).length:null;
+  const keluar=S.pes?pes.filter(r=>{const b=String(r.BULAN||'').trim().toUpperCase();return b?b===NM[per-1].toUpperCase():dm(r['TGL KELUAR'])[1]===per}).length:null;
   let F=null;if(S.ful){const r=rows('ful',S.ful.SheetNames[0]).find(x=>x[2]==='TOTAL');if(r)F={keb:num(r[4]),pkwt:num(r[5]),pkwtt:num(r[6]),os:num(r[7]),tf:num(r[8]),tot:num(r[10]),dev:num(r[11])}}
 
   // lembur
@@ -212,15 +214,16 @@ function render(){
   const bars=(it,c)=>{if(!it.length)return'<p class="empty">Unggah rekap lembur.</p>';const mx=Math.max(...it.map(i=>i[2]));return it.map(([n,s,v])=>`<div class="bar" title="${esc(s)}"><span class="t">${esc(n)}</span><div class="tr"><i style="width:${Math.max(3,v/mx*100)}%;background:var(${c})"></i></div><b>${rp(v)}</b></div>`).join('')};
   $('topk').innerHTML=bars(top.k,'--c1');$('topu').innerHTML=bars(top.u,'--c3');
   // dplk
-  $('dplk').innerHTML=Object.keys(D).length?Object.entries(D).map(([k,v])=>{const sel=v.kew-v.aset,r=Math.min(1,v.aset/v.kew);return`<div style="margin-bottom:18px"><b>Kompensasi ${k}</b> <span class="pill ${sel>0?'':'g'}">${sel>0?'Defisit ':'Surplus '}${rp(Math.abs(sel))}</span><div class="prog"><i style="width:${r*100}%;background:${sel>0?'var(--c3)':'var(--c2)'}"></i></div><table><tr><td>Kewajiban</td><td>${rp(v.kew)}</td></tr><tr><td>Saldo per ${bln}</td><td>${rp(v.aset)}</td></tr><tr><td>Status pendanaan</td><td class="${sel>0?'bad':'good'}">${pct(-sel/v.kew)}</td></tr></table></div>`}).join(''):'<p class="empty">Unggah portofolio DPLK.</p>';
+  $('dplk').innerHTML=Object.keys(D).length?Object.entries(D).map(([k,v])=>{const sel=v.kew-v.aset,r=Math.min(1,v.aset/v.kew);return`<div style="margin-bottom:18px"><b>${k==='PKWTT'?'PSL PKWTT':'Kompensasi '+k}</b> <span class="pill ${sel>0?'':'g'}">${sel>0?'Defisit ':'Surplus '}${rp(Math.abs(sel))}</span><div class="prog"><i style="width:${r*100}%;background:${sel>0?'var(--c3)':'var(--c2)'}"></i></div><table><tr><td>Kewajiban</td><td>${rp(v.kew)}</td></tr><tr><td>Saldo per ${bln}</td><td>${rp(v.aset)}</td></tr><tr><td>Status pendanaan</td><td class="${sel>0?'bad':'good'}">${pct(-sel/v.kew)}</td></tr></table></div>`}).join(''):'<p class="empty">Unggah portofolio DPLK.</p>';
   // sorotan
   const h=[];
-  if(has)h.push(`Jumlah tenaga kerja ${fmt(total)} orang: ${pct(pkwtt/total)} tetap (PKWTT) dan ${pct(pkwt/total)} kontrak (PKWT).`);
-  if(F)h.push(F.dev<0?`Kebutuhan tenaga kerja terpenuhi ${pct(F.tot/F.keb)}, masih kurang ${fmt(-F.dev)} orang.`:`Kebutuhan tenaga kerja terpenuhi penuh.`);
-  if(budget!=null&&L.length)h.push(dv<0?`Biaya lembur ${rp(biaya)} melebihi budget ${rp(budget)} sebesar ${rp(-dv)}.`:`Biaya lembur ${rp(biaya)} masih di bawah budget ${rp(budget)}.`);
-  if(absNow)h.push(`Ketidakhadiran ${bln}: alpa ${fmt(absNow.a)}, sakit ${fmt(absNow.s)}, izin ${fmt(absNow.i)} hari.`);
-  Object.entries(D).forEach(([k,v])=>v.aset<v.kew&&h.push(`Dana imbalan ${k} masih defisit ${rp(v.kew-v.aset)}.`));
-  if(keluar!=null)h.push(`Bulan ${bln}: ${has?masuk:0} karyawan masuk, ${keluar} keluar.`);
+  if(has){const arah=keluar==null||masuk===keluar?'sebesar':masuk>keluar?'naik menjadi':'turun menjadi';
+    h.push(`Jumlah tenaga kerja ${arah==='sebesar'?'sebesar':arah} ${fmt(total)} orang dengan komposisi PKWTT ${pct2(pkwtt/total)} dan PKWT ${pct2(pkwt/total)}.`)}
+  if(F)h.push(F.dev<0?`Tingkat pemenuhan tenaga kerja (fulfillment) mencapai ${pct2(F.tot/F.keb)} dari kebutuhan.`:`Tingkat pemenuhan tenaga kerja (fulfillment) terpenuhi penuh, ${pct2(F.tot/F.keb)} dari kebutuhan.`);
+  if(budget!=null&&L.length)h.push(dv<0?`Biaya lembur melebihi budget sebesar ${rpM(dv)} (${pct2(-dv/budget)}), perlu pengendalian dan efisiensi.`:`Biaya lembur masih di bawah budget sebesar ${rpM(dv)} (${pct2(dv/budget)}), tetap dijaga.`);
+  const df=Object.entries(D).filter(([k,v])=>v.aset<v.kew).map(([k,v])=>(k==='PKWTT'?'PSL PKWTT':'Kompensasi '+k)+' ('+Math.round((v.aset-v.kew)/v.kew*100)+'%)');
+  if(df.length)h.push(`Defisit pendanaan ${df.join(' dan ')} masih perlu ditutup sesuai rencana top up.`);
+  if(keluar!=null)h.push(`Turnover ${bln} ${thn}: ${has?masuk:0} orang masuk dan ${keluar} orang keluar (${has?pct2(keluar/total):'0,00%'} dari total karyawan).`);
   $('hl').innerHTML=h.length?h.map(x=>`<li>${esc(x)}</li>`).join(''):'<li class="empty">Belum ada sorotan.</li>';
 
   // charts
@@ -228,10 +231,22 @@ function render(){
   Chart.defaults.animation=false;Chart.defaults.color=css('--mute');Chart.defaults.font.family="'Plus Jakarta Sans',system-ui,sans-serif";
   const pal=['--c1','--c2','--c3','--c4','--c5','--c6'].map(css),line=css('--line');
   const mk=(id,cfg)=>{const el=$(id);el.parentElement.querySelector('.empty')?.remove();el.style.display='';charts[id]=new Chart(el,cfg)};
+  const halo=css('--card'),ink=css('--ink');
+  const lbl=(c,t,x,y,col,al,bl,sz=11)=>{c.save();c.font='700 '+sz+'px '+Chart.defaults.font.family;c.textAlign=al||'center';c.textBaseline=bl||'middle';c.lineJoin='round';c.lineWidth=3;c.strokeStyle=halo;c.strokeText(t,x,y);c.fillStyle=col;c.fillText(t,x,y);c.restore()};
+  const angka={id:'angka',afterDatasetsDraw(ch){const c=ch.ctx,tp=ch.config.type,tot0=tp==='doughnut'?ch.data.datasets[0].data.reduce((a,b)=>a+b,0):0;
+    ch.data.datasets.forEach((ds,i)=>{const m=ch.getDatasetMeta(i);if(m.hidden)return;const t=ds.type||tp;
+      m.data.forEach((el,j)=>{const v=ds.data[j];if(!v||el.skip)return;
+        if(t==='doughnut'){const p=el.getCenterPoint();c.save();c.font='700 11px '+Chart.defaults.font.family;c.textAlign='center';c.textBaseline='middle';c.lineWidth=3;c.lineJoin='round';c.strokeStyle='rgba(0,0,0,.35)';const tx=Math.round(v/tot0*100)+'%';c.strokeText(tx,p.x,p.y);c.fillStyle='#fff';c.fillText(tx,p.x,p.y);c.restore()}
+        else if(t==='line')lbl(c,fmt(v),el.x,el.y+(ds.lblPos==='below'?14:-10),ds.borderColor);
+        else if(t==='bar'){const st=ch.options.scales.x&&ch.options.scales.x.stacked;
+          if(st){const p=el.getCenterPoint();lbl(c,fmt(v),p.x,p.y,'#fff',null,null,10)}
+          else lbl(c,fmt(v),el.x,Math.min(el.y,el.base)+10,'#fff')}})});
+    if(tp==='doughnut'){const a=ch.getDatasetMeta(0).data[0];if(a){lbl(c,fmt(tot0),a.x,a.y-8,ink,null,null,26);lbl(c,'Orang',a.x,a.y+16,ink,null,null,13)}}}};
+  Chart.register(angka);
   const none=id=>{const el=$(id);el.style.display='none';if(!el.parentElement.querySelector('.empty'))el.parentElement.insertAdjacentHTML('beforeend','<p class="empty">Belum ada data untuk ditampilkan.</p>')};
-  const base={maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8}}},scales:{x:{grid:{display:false}},y:{grid:{color:line},beginAtZero:true}}};
-  kel.some(v=>v)?mk('c1',{type:'doughnut',data:{labels:KEL.map((k,i)=>k+' ('+kel[i]+')'),datasets:[{data:kel,backgroundColor:pal,borderColor:css('--card'),borderWidth:3}]},options:{maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8}}}}}):none('c1');
-  hm.length?mk('c2',{type:'line',data:{labels:hm.map(m=>BLN[m-1]),datasets:[['Alpa',0,3],['Sakit',1,0],['Izin',2,1]].map(([n,i,c])=>({label:n,data:hm.map(m=>HD[m][i]),borderColor:pal[c],backgroundColor:pal[c],tension:.35,pointRadius:3}))},options:base}):none('c2');
+  const base={maintainAspectRatio:false,layout:{padding:{top:16,bottom:6}},plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8}}},scales:{x:{grid:{display:false}},y:{grid:{color:line},beginAtZero:true}}};
+  kel.some(v=>v)?mk('c1',{type:'doughnut',data:{labels:KEL.map((k,i)=>k+' - '+fmt(kel[i])+' orang'),datasets:[{data:kel,backgroundColor:pal,borderColor:css('--card'),borderWidth:3}]},options:{maintainAspectRatio:false,cutout:'62%',layout:{padding:6},plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8}}}}}):none('c1');
+  hm.length?mk('c2',{type:'line',data:{labels:hm.map(m=>BLN[m-1]),datasets:[['Alpa',0,3],['Sakit',1,0],['Izin',2,1]].map(([n,i,c])=>({label:n,lblPos:i===0?'below':'above',data:hm.map(m=>HD[m][i]),borderColor:pal[c],backgroundColor:pal[c],tension:.35,pointRadius:3}))},options:base}):none('c2');
   sm.length?mk('c4',{type:'bar',data:{labels:sm.map(m=>BLN[m-1]),datasets:['Teguran','SP1','SP2','SP3','PHK'].map((n,i)=>({label:n,data:sm.map(m=>SK[m][i]),backgroundColor:pal[[4,0,1,2,3][i]],borderRadius:4}))},options:{...base,scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:line},ticks:{precision:0}}}}}):none('c4');
   const ml=[...Array(per).keys()].map(i=>i+1);
   L.length?mk('c3',{data:{labels:ml.map(m=>BLN[m-1]),datasets:[{type:'bar',label:'Realisasi',data:ml.map(m=>Math.round((L[m]||0)/1e6)),backgroundColor:pal[0],borderRadius:6},...(RK.length?[{type:'line',label:'RKAP',data:ml.map(m=>Math.round((RK[m]||0)/1e6)),borderColor:pal[2],backgroundColor:pal[2],tension:.3,pointRadius:3}]:[])]},options:base}):none('c3');
