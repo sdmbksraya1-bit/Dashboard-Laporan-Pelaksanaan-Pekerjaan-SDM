@@ -92,7 +92,7 @@ table{border-collapse:collapse;width:100%;font-size:12.5px}td{padding:5px 0;bord
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
-const KIND={tk:'Data TK',ful:'Fulfillment',abs:'Absensi bulan ini',lbr:'Rekap lembur',dplk:'Portofolio DPLK',pes:'Rekap pesangon',hadir:'Trend ketidakhadiran',sanksi:'Trend sanksi',tlbr:'Top 10 lembur (RKAP)',jab:'Rekap absensi Jan–Agt',eval:'Evaluasi lembur (reimburse)'};
+const KIND={tk:'Data TK',ful:'Fulfillment',abs:'Absensi bulan ini',lbr:'Rekap lembur',dplk:'Portofolio DPLK',pes:'Rekap pesangon',rkap:'RKAP lembur 2026',jab:'Rekap absensi Jan–Agt',eval:'Evaluasi lembur (reimburse)'};
 const PETA={"JASA O&M PACKER BIRINGKASSI":0,"JASA O&M PP MAKASSAR":0,"JASA O&M SILO PANTAI BIRINGKASSI":0,"JASA POS LAYANAN KENDARAAN":0,"PEMUATAN SEMEN CURAH TONASA 2/3/4/5":0,"PENGANTONGAN PABRIK 2/3":0,"PENJUMBOAN SEMEN CURAH PABRIK":0,"PP AMBON":0,"PP BALIKPAPAN":0,"PP BANJARMASIN":0,"PP BITUNG":0,"PP CELUKAN BAWANG":0,"PP KENDARI":0,"PP MALUKU UTARA":0,"PP MAMUJU":0,"PP PALU":0,"PP PONTIANAK":0,"PP SAMARINDA":0,"PP SORONG":0,"BM KLINKER":1,"BM SEMEN BAG LASAHAN VESSEL":1,"BM SEMEN CURAH":1,"BM SEMEN JUMBO VIA FASILITAS PENJUMBOAN":1,"BM SEMEN JUMBO VIA TRUCK":1,"BONGKAR MATERIAL":1,"CRANE DARAT BKS":1,"CRANE DARAT PABRIK":1,"FORKLIFT PABRIK":1,"INDUSTRIAL CLEANING BKS":2,"AKUNTANSI":3,"ASET & PERSEDIAAN":3,"HUKUM, KEPATUHAN & MANAJEMEN RESIKO":3,"INTERNAL AUDIT":3,"JASA LAYANAN PRODUKSI TERAK":3,"K3":3,"KESEKTARIATAN & SISTEM MANAJEMEN":3,"KEUANGAN & PAJAK":3,"PEMELIHARAAN DUST COLLECTOR":3,"PENGADAAN":3,"PENGANTONGAN PABRIK 5":3,"PIUTANG":3,"PUP & REBRICKING":3,"SDM":3,"SUPPORTING PABRIK":3,"WORKSHOP & PENUNJANG":3};
 const KEL=['Pemuatan Semen','Bongkar Muat & Sewa Alat','Pembersihan','Pemeliharaan Pabrik & Penunjang'];
 const BLN=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
@@ -124,6 +124,7 @@ function detectWb(wb){const n=wb.SheetNames,has=x=>n.includes(x);
   if(has('PKWTT')&&has('PKWT'))return'dplk';if(has('Rekap')&&has('1'))return'lbr';
   if(has('Jun')&&has('Okt')&&has('Sep'))return'tlbr';
   const flat=rr(wb.Sheets[n[0]]).slice(0,6).flat().map(x=>String(x||'').toUpperCase()).join('|');
+  if(flat.includes('URAIAN')&&flat.includes('JANUARI'))return'rkap';
   if(flat.includes('TEGURAN')&&flat.includes('SP1'))return'sanksi';
   if(flat.includes('BULAN')&&flat.includes('ALPA')&&flat.includes('SAKIT'))return'hadir';
   if(flat.includes('EMP_ID')&&flat.includes('EMP_STATUS'))return'tk';
@@ -162,6 +163,7 @@ function render(){
     const u={};cur.forEach(r=>u[r.AREA_NAME]=(u[r.AREA_NAME]||0)+num(r.OT));top.u=Object.entries(u).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([n,v])=>[n,n,v])}
   const RK=[];if(S.tlbr){const sh=S.tlbr.SheetNames.includes(BLN[per-1])?BLN[per-1]:S.tlbr.SheetNames[S.tlbr.SheetNames.length-1];
     rows('tlbr',sh).forEach(r=>r.forEach((c,j)=>{const m=monOf(c);if(m&&typeof c==='string'&&typeof r[j-1]==='number'&&r[j+1]>1e5)RK[m]=r[j+1]}))}
+  if(S.rkap){const r=rows('rkap',S.rkap.SheetNames[0]),hi=r.findIndex(x=>x.some(c=>String(c||'').toUpperCase()==='URAIAN'));if(hi>=0){const cm=r[hi].map(monOf);RK.length=0;r.slice(hi+1).forEach(x=>{if(String(x[0]||'').trim())cm.forEach((m,j)=>{if(m&&typeof x[j]==='number')RK[m]=(RK[m]||0)+x[j]})})}}
   const biaya=L.reduce((s,v,m)=>m<=per?s+(v||0):s,0);
   let manual=null;try{manual=parseFloat(localStorage.getItem('sdm_bud_'+per))||null}catch(e){}
   const rkSum=RK.reduce((s,v,m)=>m<=per?s+(v||0):s,0);
@@ -201,12 +203,12 @@ function render(){
   $('unm').textContent=unm.size?`${[...unm].length} unit belum punya kelompok: ${[...unm].slice(0,3).join(', ')}${unm.size>3?', dll':''}.`:'';
   // insight
   const li=hm.length-1,ci=(t,x)=>`<p class="note"><b class="${x<=0?'good':'bad'}">${x<=0?'▼':'▲'}</b> ${t}</p>`;
-  $('ins').innerHTML=li>0?(a=>ci(`Alpa ${a[li][0]<a[li-1][0]?'turun':a[li][0]>a[li-1][0]?'naik':'tetap'}: ${HD[hm[li]][0]} dari ${HD[hm[li-1]][0]}`,HD[hm[li]][0]-HD[hm[li-1]][0])+ci(`Sakit ${HD[hm[li]][1]<HD[hm[li-1]][1]?'turun':HD[hm[li]][1]>HD[hm[li-1]][1]?'naik':'tetap'}: ${HD[hm[li]][1]} dari ${HD[hm[li-1]][1]}`,HD[hm[li]][1]-HD[hm[li-1]][1]))():'';
+  $('ins').innerHTML=li>0?(()=>{const c=HD[hm[li]],q=HD[hm[li-1]],t=(x,y)=>x<y?'turun':x>y?'naik':'tetap';return ci(`Alpa ${t(c[0],q[0])}: ${c[0]} dari ${q[0]}`,c[0]-q[0])+ci(`Sakit ${t(c[1],q[1])}: ${c[1]} dari ${q[1]}`,c[1]-q[1])})():'';
   // lembur tiles
   const T=(l,v,c='')=>`<div class="tile"><span>${l}</span><b class="${c}">${v}</b></div>`;
   $('lem').innerHTML=L.length?T('Biaya s.d. '+BLN[per-1],rp(biaya))+T('Budget',budget!=null?rp(budget):d)+T('Selisih',dv!=null?rp(dv):d,dv<0?'bad':'good')+T('Dapat direimburse',reim!=null?rp(reim):d):'<p class="empty">Unggah rekap lembur.</p>';
   if(document.activeElement!==$('bud'))$('bud').value=manual||'';
-  $('budf').textContent=manual?rp(manual)+' · selisih dihitung otomatis':'Belum diisi. Setelah diisi, selisih dihitung otomatis.';
+  $('budf').textContent=manual?rp(manual)+' · selisih dihitung otomatis':(rkSum?'Memakai total RKAP '+rp(rkSum)+' dari file. Ketik angka lain untuk menggantinya.':'Belum diisi. Setelah diisi, selisih dihitung otomatis.');
   const bars=(it,c)=>{if(!it.length)return'<p class="empty">Unggah rekap lembur.</p>';const mx=Math.max(...it.map(i=>i[2]));return it.map(([n,s,v])=>`<div class="bar" title="${esc(s)}"><span class="t">${esc(n)}</span><div class="tr"><i style="width:${Math.max(3,v/mx*100)}%;background:var(${c})"></i></div><b>${rp(v)}</b></div>`).join('')};
   $('topk').innerHTML=bars(top.k,'--c1');$('topu').innerHTML=bars(top.u,'--c3');
   // dplk
