@@ -80,7 +80,7 @@ table{border-collapse:collapse;width:100%;font-size:12.5px}td{padding:5px 0;bord
     <section class="card"><h2>Sanksi disiplin</h2><p class="hint">Isi jumlah sanksi tiap bulan, grafik muncul otomatis.</p><div class="chartbox sm"><canvas id="c4"></canvas></div><div id="sf"></div></section>
   </div>
   <div class="grid cols">
-    <section class="card"><h2>Biaya lembur</h2><p class="hint">Biaya nyata dibanding rencana (RKAP) tiap bulan, dalam juta rupiah.</p><div class="chartbox sm"><canvas id="c3"></canvas></div><div class="tiles" id="lem"></div><label class="bud">✍️ Isi budget lembur s.d. bulan ini (Rp)<input type="number" min="0" id="bud" placeholder="contoh: 4994000000"><small id="budf"></small></label></section>
+    <section class="card"><h2>Biaya lembur</h2><p class="hint">Biaya nyata dibanding rencana (RKAP) tiap bulan, dalam juta rupiah.</p><div class="chartbox sm"><canvas id="c3"></canvas></div><div class="tiles" id="lem"></div><label class="bud" hidden style="display:none">✍️ Isi budget lembur s.d. bulan ini (Rp)<input type="number" min="0" id="bud" placeholder="contoh: 4994000000"><small id="budf"></small></label></section>
     <section class="card"><h2>Lembur tertinggi</h2><p class="hint">Bulan ini.</p><b>10 karyawan</b><div id="topk"></div><b style="display:block;margin-top:14px">10 unit kerja</b><div id="topu"></div></section>
   </div>
   <div class="grid cols">
@@ -237,10 +237,10 @@ function render(){
     ch.data.datasets.forEach((ds,i)=>{const m=ch.getDatasetMeta(i);if(m.hidden)return;const t=ds.type||tp;
       m.data.forEach((el,j)=>{const v=ds.data[j];if(!v||el.skip)return;
         if(t==='doughnut'){const p=el.getCenterPoint();c.save();c.font='700 11px '+Chart.defaults.font.family;c.textAlign='center';c.textBaseline='middle';c.lineWidth=3;c.lineJoin='round';c.strokeStyle='rgba(0,0,0,.35)';const tx=Math.round(v/tot0*100)+'%';c.strokeText(tx,p.x,p.y);c.fillStyle='#fff';c.fillText(tx,p.x,p.y);c.restore()}
-        else if(t==='line')lbl(c,fmt(v),el.x,el.y+(ds.lblPos==='below'?14:-10),ds.borderColor,null,null,11,halo);
+        else if(t==='line'){let below=ds.lblPos==='below';if(ds.lblPos==='auto'){const bd=ch.data.datasets.find(d=>d.type==='bar');below=bd?v<=bd.data[j]:false}lbl(c,fmt(v),el.x,el.y+(below?16:-10),ds.lblPos==='auto'?'#b3202b':ds.borderColor,null,null,11,halo)}
         else if(t==='bar'){const st=ch.options.scales.x&&ch.options.scales.x.stacked;
           if(st){const p=el.getCenterPoint();lbl(c,fmt(v),p.x,p.y,'#fff',null,null,10,'rgba(0,0,0,.45)')}
-          else lbl(c,fmt(v),el.x,Math.max(el.y,el.base)-10,'#fff',null,null,11,'rgba(0,0,0,.45)')}})});
+          else lbl(c,fmt(v),el.x,Math.min(el.y,el.base)-10,ink,null,null,11,halo)}})});
     if(tp==='doughnut'){const a=ch.getDatasetMeta(0).data[0];if(a){lbl(c,fmt(tot0),a.x,a.y-8,ink,null,null,26);lbl(c,'Orang',a.x,a.y+16,ink,null,null,13)}}}};
   Chart.register(angka);
   const none=id=>{const el=$(id);el.style.display='none';if(!el.parentElement.querySelector('.empty'))el.parentElement.insertAdjacentHTML('beforeend','<p class="empty">Belum ada data untuk ditampilkan.</p>')};
@@ -249,7 +249,7 @@ function render(){
   hm.length?mk('c2',{type:'line',data:{labels:hm.map(m=>BLN[m-1]),datasets:[['Alpa',0,3],['Sakit',1,0],['Izin',2,1]].map(([n,i,c])=>({label:n,lblPos:i===0?'below':'above',data:hm.map(m=>HD[m][i]),borderColor:pal[c],backgroundColor:pal[c],tension:.35,pointRadius:3}))},options:base}):none('c2');
   sm.length?mk('c4',{type:'bar',data:{labels:sm.map(m=>BLN[m-1]),datasets:['Teguran','SP1','SP2','SP3','PHK'].map((n,i)=>({label:n,data:sm.map(m=>SK[m][i]),backgroundColor:pal[[4,0,1,2,3][i]],borderRadius:4}))},options:{...base,scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:line},ticks:{precision:0}}}}}):none('c4');
   const ml=[...Array(per).keys()].map(i=>i+1);
-  L.length?mk('c3',{data:{labels:ml.map(m=>BLN[m-1]),datasets:[{type:'bar',label:'Realisasi',data:ml.map(m=>Math.round((L[m]||0)/1e6)),backgroundColor:pal[0],borderRadius:6},...(RK.length?[{type:'line',label:'RKAP',data:ml.map(m=>Math.round((RK[m]||0)/1e6)),borderColor:pal[2],backgroundColor:pal[2],tension:.3,pointRadius:3}]:[])]},options:base}):none('c3');
+  L.length?mk('c3',{data:{labels:ml.map(m=>BLN[m-1]),datasets:[{type:'bar',label:'Realisasi',data:ml.map(m=>Math.round((L[m]||0)/1e6)),backgroundColor:pal[0],borderRadius:6},...(RK.length?[{type:'line',label:'RKAP',lblPos:'auto',data:ml.map(m=>Math.round((RK[m]||0)/1e6)),borderColor:pal[2],backgroundColor:pal[2],tension:.3,pointRadius:3}]:[])]},options:{...base,layout:{padding:{top:24,bottom:6,left:4,right:14}},scales:{...base.scales,y:{...base.scales.y,grace:'8%'}}}}):none('c3');
   renderSf(per);
 }
 const dz=$('drop');
@@ -265,4 +265,3 @@ chips();
 </script>
 </body>
 </html>
-
